@@ -12,7 +12,7 @@ contract FourbyTest is Test {
 
     function setUp() public {
         owner = address(this);
-        nft = new FourbyNFT("Fourby", "FOURBY", owner);
+        nft = new FourbyNFT(owner);
     }
 
     function testTokenUri() public {
@@ -40,7 +40,7 @@ contract FourbyTest is Test {
     }
 
     function testRevertMintToZeroAddress() public {
-        vm.expectRevert("INVALID_RECIPIENT");
+        vm.expectRevert(ERC721.TransferToZeroAddress.selector);
         nft.mintTo{value: 0.08 ether}(address(0));
     }
 
@@ -63,7 +63,7 @@ contract FourbyTest is Test {
     }
 
     function testSafeContractReceiver() public {
-        Receiver receiver = new Receiver();
+        TestTokenReceiver receiver = new TestTokenReceiver();
         nft.mintTo{value: 0.08 ether}(address(receiver));
         uint256 slotBalance =
             stdstore.target(address(nft)).sig(nft.balanceOf.selector).with_key(address(receiver)).find();
@@ -73,12 +73,12 @@ contract FourbyTest is Test {
 
     function testRevertUnSafeContractReceiver() public {
         vm.etch(address(1234), bytes("mock code"));
-        vm.expectRevert(bytes(""));
-        nft.mintTo{value: 0.08 ether}(address(1234));
+        vm.expectRevert(ERC721.TransferToNonERC721ReceiverImplementer.selector);
+        nft.mintTo{value: 1.0 ether}(address(1234));
     }
 
     function testWithdrawalWorksAsOwner() public {
-        Receiver receiver = new Receiver();
+        TestTokenReceiver receiver = new TestTokenReceiver();
         address payable payee = payable(address(0x1337));
         uint256 priorOwnerBalance = payee.balance;
 
@@ -91,20 +91,20 @@ contract FourbyTest is Test {
     }
 
     function testWithdrawalFailsAsNotOwner() public {
-        Receiver receiver = new Receiver();
+        TestTokenReceiver receiver = new TestTokenReceiver();
 
         nft.mintTo{value: nft.MINT_PRICE()}(address(receiver));
         assertEq(address(nft).balance, nft.MINT_PRICE());
 
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(Ownable.Unauthorized.selector);
         vm.startPrank(address(0x1337));
         nft.withdrawPayments(payable(address(0x1337)));
         vm.stopPrank();
     }
 }
 
-contract Receiver is ERC721TokenReceiver {
-    function onERC721Received(address, address, uint256, bytes calldata) external pure override returns (bytes4) {
+contract TestTokenReceiver {
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
 }

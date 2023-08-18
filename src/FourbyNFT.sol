@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import "solmate/tokens/ERC721.sol";
-import "solmate/auth/Owned.sol";
-import "openzeppelin-contracts/contracts/utils/Strings.sol";
-import "openzeppelin-contracts/contracts/utils/Base64.sol";
+import "solady/tokens/ERC721.sol";
+import "solady/auth/Ownable.sol";
+import "solady/utils/Base64.sol";
+import "solady/utils/LibString.sol";
 // import "forge-std/console.sol";
 
 error MintPriceNotPaid();
@@ -12,8 +12,8 @@ error MaxSupply();
 error NonExistentTokenURI();
 error WithdrawTransfer();
 
-contract FourbyNFT is ERC721, Owned {
-    using Strings for uint256;
+contract FourbyNFT is ERC721, Ownable {
+    using LibString for uint256;
 
     uint256 public currentTokenId;
     string public baseUri;
@@ -21,9 +21,18 @@ contract FourbyNFT is ERC721, Owned {
     uint256 public constant TOTAL_SUPPLY = 10_000;
     uint256 public constant MINT_PRICE = 0.001 ether;
 
-    constructor(string memory _name, string memory _symbol, address _owner) ERC721(_name, _symbol) Owned(_owner) {
+    constructor(address _owner) {
         currentTokenId = 0;
+        _initializeOwner(_owner);
         baseUri = "ipfs://baseUri/";
+    }
+
+    function name() public view virtual override returns (string memory) {
+        return "FourbyNFT";
+    }
+
+    function symbol() public view virtual override returns (string memory) {
+        return "FOURBY";
     }
 
     function mintTo(address recipient) public payable returns (uint256) {
