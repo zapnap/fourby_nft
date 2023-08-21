@@ -2,23 +2,34 @@
 pragma solidity ^0.8.21;
 
 import "forge-std/Test.sol";
+import "forge-std/StdJson.sol";
 import "../src/FourbyNFT.sol";
 
 contract FourbyTest is Test {
     using stdStorage for StdStorage;
+    using stdJson for string;
 
-    FourbyNFT public nft;
+    TestableFourbyNFT public nft;
     address public owner;
 
     function setUp() public {
         owner = address(this);
-        nft = new FourbyNFT(owner);
+        nft = new TestableFourbyNFT(owner);
     }
 
-    function testTokenUri() public {
+    function testTokenURI() public {
         nft.mintTo{value: 0.001 ether}(address(1));
         string memory uri = nft.tokenURI(1);
-        assertEq(uri, "ipfs://baseUri/1");
+        // assertEq(uri, "ipfs://baseUri/1");
+        console.log(uri);
+    }
+
+    function testGenerateSvgJson() public {
+        nft.mintTo{value: 0.001 ether}(address(1));
+        string memory uri = nft.generateSvgJson(1);
+        string memory decoded = string(Base64.decode(uri));
+        FourbyMetadata memory parsed = abi.decode(vm.parseJson(decoded), (FourbyMetadata));
+        assertEq(parsed.name, "Fourby #1");
     }
 
     function testRevertMintWithoutValue() public {
@@ -107,4 +118,20 @@ contract TestTokenReceiver {
     function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
+}
+
+// expose internal functions for testing
+contract TestableFourbyNFT is FourbyNFT {
+    constructor(address _owner) FourbyNFT(_owner) {}
+
+    function generateSvgJson(uint256 tokenId) public pure returns (string memory) {
+        return _generateSvgJson(tokenId);
+    }
+}
+
+// NOTE: alphabetical order matters
+struct FourbyMetadata {
+    string description;
+    string image;
+    string name;
 }

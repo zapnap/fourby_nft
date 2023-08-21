@@ -46,7 +46,41 @@ contract FourbyNFT is ERC721, Ownable {
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         if (ownerOf(tokenId) == address(0)) revert NonExistentTokenURI();
-        return bytes(baseUri).length > 0 ? string(abi.encodePacked(baseUri, tokenId.toString())) : "";
+
+        return string(abi.encodePacked("data:application/json;base64", _generateSvgJson(tokenId)));
+    }
+
+    function _generateSvgJson(uint256 tokenId) internal pure returns (string memory) {
+        string[20] memory parts;
+        parts[0] = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 400 400">';
+        parts[2] = '<rect width="400" height="400" x="0" y="0" style="stroke-width:1;stroke:rgb(0,0,0)"/>';
+        parts[3] =
+            '<rect width="199" height="199" x="1" y="1" style="fill:rgb(0,0,255);stroke-width:2;stroke:rgb(0,0,0)" />';
+        parts[4] =
+            '<rect width="199" height="199" x="1" y="1" style="fill:rgb(0,0,255);stroke-width:2;stroke:rgb(0,0,0)" />';
+        parts[5] =
+            '<rect width="199" height="199" x="200" y="1" style="fill:rgb(255,0,0);stroke-width:2;stroke:rgb(0,0,0)" />';
+        parts[6] =
+            '<rect width="199" height="199" x="1" y="200" style="fill:rgb(255,255,0);stroke-width:2;stroke:rgb(0,0,0)" />';
+        parts[7] =
+            '<rect width="199" height="199" x="200" y="200" style="fill:rgb(0,255,0);stroke-width:2;stroke:rgb(0,0,0)" />';
+        parts[8] = "</svg>";
+        string memory output =
+            string(abi.encodePacked(parts[0], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8]));
+        string memory json = Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        '{"name": "Fourby #',
+                        LibString.toString(tokenId),
+                        '", "description": "Fourby is a collection of 10,000 unique NFTs. Each Fourby is randomly generated and stored on-chain.", "image": "data:image/svg+xml;base64,',
+                        Base64.encode(bytes(output)),
+                        '"}'
+                    )
+                )
+            )
+        );
+        return json;
     }
 
     function withdrawPayments(address payable payee) external onlyOwner {
