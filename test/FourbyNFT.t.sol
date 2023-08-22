@@ -19,9 +19,9 @@ contract FourbyTest is Test {
 
     function testTokenURI() public {
         nft.mintTo{value: 0.001 ether}(address(1));
-        string memory uri = nft.tokenURI(1);
+        nft.tokenURI(1);
         // assertEq(uri, "ipfs://baseUri/1");
-        console.log(uri);
+        // console.log(uri);
     }
 
     function testGenerateSvgJson() public {
