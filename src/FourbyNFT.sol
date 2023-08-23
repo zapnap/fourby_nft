@@ -57,32 +57,32 @@ contract FourbyNFT is ERC721, Ownable {
     }
 
     function _generateSvgJson(uint256 tokenId) internal view returns (string memory) {
-        string[8] memory parts;
+        string[7] memory parts;
         parts[0] = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 400 400">';
-        parts[2] = '<rect width="400" height="400" x="0" y="0" style="stroke-width:1;stroke:rgb(0,0,0)"/>';
-        parts[3] = string.concat(
+        parts[1] = '<rect width="400" height="400" x="0" y="0" style="stroke-width:1;stroke:rgb(0,0,0)"/>';
+        parts[2] = string.concat(
             '<rect width="199" height="199" x="1" y="1" style="fill:',
             _svgColor(tokenId, 0),
             ';stroke-width:2;stroke:rgb(0,0,0)" />'
         );
-        parts[4] = string.concat(
+        parts[3] = string.concat(
             '<rect width="199" height="199" x="200" y="1" style="fill:',
             _svgColor(tokenId, 1),
             ';stroke-width:2;stroke:rgb(0,0,0)" />'
         );
-        parts[5] = string.concat(
+        parts[4] = string.concat(
             '<rect width="199" height="199" x="1" y="200" style="fill:',
             _svgColor(tokenId, 2),
             ';stroke-width:2;stroke:rgb(0,0,0)" />'
         );
-        parts[6] = string.concat(
+        parts[5] = string.concat(
             '<rect width="199" height="199" x="200" y="200" style="fill:',
             _svgColor(tokenId, 3),
             ';stroke-width:2;stroke:rgb(0,0,0)" />'
         );
-        parts[7] = "</svg>";
+        parts[6] = "</svg>";
         string memory output =
-            string(abi.encodePacked(parts[0], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]));
+            string(abi.encodePacked(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]));
         string memory json = Base64.encode(
             bytes(
                 string(
