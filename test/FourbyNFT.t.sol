@@ -17,21 +17,6 @@ contract FourbyTest is Test {
         nft = new TestableFourbyNFT(owner);
     }
 
-    function testTokenURI() public {
-        nft.mintTo{value: 0.001 ether}(address(1));
-        nft.tokenURI(1);
-        // assertEq(uri, "ipfs://baseUri/1");
-        // console.log(uri);
-    }
-
-    function testGenerateSvgJson() public {
-        nft.mintTo{value: 0.001 ether}(address(1));
-        string memory uri = nft.generateSvgJson(1);
-        string memory decoded = string(Base64.decode(uri));
-        FourbyMetadata memory parsed = abi.decode(vm.parseJson(decoded), (FourbyMetadata));
-        assertEq(parsed.name, "Fourby #1");
-    }
-
     function testRevertMintWithoutValue() public {
         vm.expectRevert(MintPriceNotPaid.selector);
         nft.mintTo(address(1));
@@ -112,6 +97,28 @@ contract FourbyTest is Test {
         nft.withdrawPayments(payable(address(0x1337)));
         vm.stopPrank();
     }
+
+    function testTokenURI() public {
+        nft.mintTo{value: 0.001 ether}(address(1));
+        nft.tokenURI(1);
+        // assertEq(uri, "ipfs://baseUri/1");
+        // console.log(uri);
+    }
+
+    function testGenerateSvgJson() public {
+        nft.mintTo{value: 0.001 ether}(address(1));
+        string memory uri = nft.generateSvgJson(1);
+        string memory decoded = string(Base64.decode(uri));
+        FourbyMetadata memory parsed = abi.decode(vm.parseJson(decoded), (FourbyMetadata));
+        assertEq(parsed.name, "Fourby #1");
+    }
+
+    function testGenerateRandom(uint256 tokenId, uint256 index) public {
+        vm.warp(1641070800);
+        uint256 random = nft.generateRandom(tokenId, index) % 10;
+        assertLe(random, 10);
+        assertGe(random, 0);
+    }
 }
 
 contract TestTokenReceiver {
@@ -124,8 +131,12 @@ contract TestTokenReceiver {
 contract TestableFourbyNFT is FourbyNFT {
     constructor(address _owner) FourbyNFT(_owner) {}
 
-    function generateSvgJson(uint256 tokenId) public pure returns (string memory) {
+    function generateSvgJson(uint256 tokenId) public view returns (string memory) {
         return _generateSvgJson(tokenId);
+    }
+
+    function generateRandom(uint256 tokenId, uint256 index) public view returns (uint256) {
+        return _generateRandom(tokenId, index);
     }
 }
 
