@@ -57,46 +57,47 @@ contract FourbyNFT is ERC721, Ownable {
     }
 
     function _generateSvgJson(uint256 tokenId) internal view returns (string memory) {
-        string[7] memory parts;
-        parts[0] = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 400 400">';
-        parts[1] = '<rect width="400" height="400" x="0" y="0" style="stroke-width:1;stroke:rgb(0,0,0)"/>';
-        parts[2] = string.concat(
-            '<rect width="199" height="199" x="1" y="1" style="fill:',
+        string memory svg = string.concat(
+            '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 400 400">',
+            '<rect width="400" height="400" x="0" y="0"/>',
+            '<rect width="200" height="200" x="0" y="0" style="fill:',
             _svgColor(tokenId, 0),
-            ';stroke-width:2;stroke:rgb(0,0,0)" />'
-        );
-        parts[3] = string.concat(
-            '<rect width="199" height="199" x="200" y="1" style="fill:',
+            ';"/>',
+            '<rect width="200" height="200" x="200" y="0" style="fill:',
             _svgColor(tokenId, 1),
-            ';stroke-width:2;stroke:rgb(0,0,0)" />'
-        );
-        parts[4] = string.concat(
-            '<rect width="199" height="199" x="1" y="200" style="fill:',
+            ';"/>',
+            '<rect width="200" height="200" x="0" y="200" style="fill:',
             _svgColor(tokenId, 2),
-            ';stroke-width:2;stroke:rgb(0,0,0)" />'
-        );
-        parts[5] = string.concat(
-            '<rect width="199" height="199" x="200" y="200" style="fill:',
+            ';"/>',
+            '<rect width="200" height="200" x="200" y="200" style="fill:',
             _svgColor(tokenId, 3),
-            ';stroke-width:2;stroke:rgb(0,0,0)" />'
+            ';"/>',
+            '<circle cx="200" cy="200" r="200" fill="gray" fill-opacity="0.4"/>',
+            '<circle cx="200" cy="200" r="100" fill="lightgray" fill-opacity="0.5"/>',
+            '<circle cx="200" cy="200" r="70" fill="darkgray" fill-opacity="0.5"/>',
+            '<circle cx="200" cy="200" r="60" fill="silver" fill-opacity="0.5"/>',
+            '<circle cx="200" cy="200" r="10" fill="white" fill-opacity="1"/>',
+            '<line x1="200" y1="0" x2="200" y2="400" style="stroke:#fff; stroke-width:2;"/>',
+            '<line x1="0" y1="200" x2="400" y2="200" style="stroke:#fff; stroke-width:2;"/>',
+            '<text x="10" y="390" class="text" style="fill:#fff">',
+            LibString.toString(tokenId),
+            "010.4540",
+            '</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>',
+            "</svg>"
         );
-        parts[6] = "</svg>";
-        string memory output =
-            string(abi.encodePacked(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]));
-        string memory json = Base64.encode(
+        return Base64.encode(
             bytes(
                 string(
                     abi.encodePacked(
                         '{"name": "Fourby #',
                         LibString.toString(tokenId),
                         '", "description": "Fourby is a collection of 10,000 unique NFTs. Each Fourby is randomly generated and stored on-chain.", "image": "data:image/svg+xml;base64,',
-                        Base64.encode(bytes(output)),
+                        Base64.encode(bytes(svg)),
                         '"}'
                     )
                 )
             )
         );
-        return json;
     }
 
     function _svgColor(uint256 tokenId, uint256 index) internal view returns (string memory) {
