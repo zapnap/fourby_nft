@@ -57,30 +57,39 @@ contract FourbyNFT is ERC721, Ownable {
     }
 
     function _generateSvgJson(uint256 tokenId) internal view returns (string memory) {
+        string[4] memory colors =
+            [_svgColor(tokenId, 0), _svgColor(tokenId, 1), _svgColor(tokenId, 2), _svgColor(tokenId, 3)];
         string memory svg = string.concat(
             '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 400 400">',
             '<rect width="400" height="400" x="0" y="0"/>',
             '<rect width="200" height="200" x="0" y="0" style="fill:',
-            _svgColor(tokenId, 0),
+            colors[0],
             ';"/>',
             '<rect width="200" height="200" x="200" y="0" style="fill:',
-            _svgColor(tokenId, 1),
+            colors[1],
             ';"/>',
             '<rect width="200" height="200" x="0" y="200" style="fill:',
-            _svgColor(tokenId, 2),
+            colors[2],
             ';"/>',
             '<rect width="200" height="200" x="200" y="200" style="fill:',
-            _svgColor(tokenId, 3),
-            ';"/>',
-            '<circle cx="200" cy="200" r="200" fill="gray" fill-opacity="0.4"/>',
-            '<circle cx="200" cy="200" r="100" fill="lightgray" fill-opacity="0.5"/>',
-            '<circle cx="200" cy="200" r="70" fill="darkgray" fill-opacity="0.5"/>',
-            '<circle cx="200" cy="200" r="60" fill="silver" fill-opacity="0.5"/>',
-            '<circle cx="200" cy="200" r="10" fill="white" fill-opacity="1"/>',
-            '<line x1="200" y1="0" x2="200" y2="400" style="stroke:#fff; stroke-width:2;"/>',
-            '<line x1="0" y1="200" x2="400" y2="200" style="stroke:#fff; stroke-width:2;"/>',
-            '<text x="10" y="390" class="text" style="fill:#fff">',
-            LibString.toString(tokenId),
+            colors[3],
+            ';"/>'
+        );
+        for (uint256 i = 0; i < 8; i++) {
+            uint256 val = (i + 1) * 20;
+            svg = string.concat(
+                svg,
+                '<circle cx="200" cy="200" r="',
+                val.toString(),
+                '" stroke="',
+                colors[i % 4],
+                '" stroke-width="10" stroke-opacity="1" fill-opacity="0"/>'
+            );
+        }
+        svg = string.concat(
+            svg,
+            '<text x="10" y="390" class="text" style="fill:#fff">0',
+            LibString.toString(tokenId + 10000),
             "010.4540",
             '</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>',
             "</svg>"
