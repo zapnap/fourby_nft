@@ -91,6 +91,8 @@ contract FourbyNFT is ERC721, Ownable {
             '<text x="10" y="390" class="text" style="fill:#fff">0',
             LibString.toString(tokenId + 10000),
             ".",
+            block.chainid.toString(),
+            ".",
             block.number.toString(),
             '</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>',
             "</svg>"
