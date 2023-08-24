@@ -1,66 +1,27 @@
-## Foundry
+## FourbyNFT
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+**Example generative NFT art project with assets stored 100% on-chain (SVGs)**
 
-Foundry consists of:
+Deploy contract:
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+`forge create FourbyNFT --rpc-url=$RPC_URL --private-key=$PRIVATE_KEY --constructor-args "$OWNER_ADDRESS" src/FourbyNFT.sol:FourbyNFT`
 
-## Documentation
+Mint a token:
 
-https://book.getfoundry.sh/
+`cast send --rpc-url $RPC_URL --private-key $PRIVATE_KEY $CONTRACT_ADDRESS "mintTo(address)" "$OWNER_ADDRESS" --value 0.001ether`
 
-## Usage
+Get token URI (Base64-encoded):
 
-### Build
+`cast call --rpc-url $RPC_URL $CONTRACT_ADDRESS "tokenURI(uint256)(string)" 1`
 
-```shell
-$ forge build
+Decoding the returned value produces some JSON:
+
+```
+{"name": "Fourby #1", "description": "Fourby is a collection of 10,000 unique NFTs. Each Fourby is randomly generated and stored on-chain.", "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaW5ZTWluIG1lZXQiIHZpZXdCb3g9IjAgMCA0MDAgNDAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeD0iMCIgeT0iMCIvPjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB4PSIwIiB5PSIwIiBzdHlsZT0iZmlsbDojQ0NBQzkzOyIvPjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB4PSIyMDAiIHk9IjAiIHN0eWxlPSJmaWxsOiMxNThGQUQ7Ii8+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIHg9IjAiIHk9IjIwMCIgc3R5bGU9ImZpbGw6I0FGQjgzQjsiLz48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeD0iMjAwIiB5PSIyMDAiIHN0eWxlPSJmaWxsOiNGQUQwMDA7Ii8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMjAwIiByPSIyMDAiIGZpbGw9ImdyYXkiIGZpbGwtb3BhY2l0eT0iMC40Ii8+"}
 ```
 
-### Test
+Decoded SVG example:
 
-```shell
-$ forge test
 ```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 400 400"><rect width="400" height="400" x="0" y="0"/><rect width="200" height="200" x="0" y="0" style="fill:#CCAC93;"/><rect width="200" height="200" x="200" y="0" style="fill:#158FAD;"/><rect width="200" height="200" x="0" y="200" style="fill:#AFB83B;"/><rect width="200" height="200" x="200" y="200" style="fill:#FAD000;"/><circle cx="200" cy="200" r="200" fill="gray" fill-opacity="0.4"/>
 ```
