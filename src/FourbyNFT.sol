@@ -9,7 +9,6 @@ import "solady/utils/LibString.sol";
 
 error MintPriceNotPaid();
 error MaxSupply();
-error NonExistentTokenURI();
 error WithdrawTransfer();
 
 contract FourbyNFT is ERC721, Ownable {
@@ -51,12 +50,32 @@ contract FourbyNFT is ERC721, Ownable {
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        if (ownerOf(tokenId) == address(0)) revert NonExistentTokenURI();
-
+        if (!_exists(tokenId)) revert ERC721.TokenDoesNotExist();
         return string(abi.encodePacked("data:application/json;base64", _generateSvgJson(tokenId)));
     }
 
+    function renderSvg(uint256 tokenId) public view returns (string memory) {
+        if (!_exists(tokenId)) revert ERC721.TokenDoesNotExist();
+        return _generateSvg(tokenId);
+    }
+
     function _generateSvgJson(uint256 tokenId) internal view returns (string memory) {
+        return Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        '{"name": "Fourby #',
+                        LibString.toString(tokenId),
+                        '", "description": "Fourby is a collection of 10,000 unique NFTs. Each Fourby is randomly generated and stored on-chain.", "image": "data:image/svg+xml;base64,',
+                        Base64.encode(bytes(_generateSvg(tokenId))),
+                        '"}'
+                    )
+                )
+            )
+        );
+    }
+
+    function _generateSvg(uint256 tokenId) internal view returns (string memory) {
         string[4] memory colors =
             [_svgColor(tokenId, 0), _svgColor(tokenId, 1), _svgColor(tokenId, 2), _svgColor(tokenId, 3)];
         string memory svg = string.concat(
@@ -86,7 +105,7 @@ contract FourbyNFT is ERC721, Ownable {
                 '" stroke-width="10" stroke-opacity="1" fill-opacity="0"/>'
             );
         }
-        svg = string.concat(
+        return string.concat(
             svg,
             '<text x="10" y="390" class="text" style="fill:#fff">0',
             LibString.toString(tokenId + 10000),
@@ -96,19 +115,6 @@ contract FourbyNFT is ERC721, Ownable {
             block.number.toString(),
             '</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>',
             "</svg>"
-        );
-        return Base64.encode(
-            bytes(
-                string(
-                    abi.encodePacked(
-                        '{"name": "Fourby #',
-                        LibString.toString(tokenId),
-                        '", "description": "Fourby is a collection of 10,000 unique NFTs. Each Fourby is randomly generated and stored on-chain.", "image": "data:image/svg+xml;base64,',
-                        Base64.encode(bytes(svg)),
-                        '"}'
-                    )
-                )
-            )
         );
     }
 

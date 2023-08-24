@@ -105,6 +105,23 @@ contract FourbyTest is Test {
         // console.log(uri);
     }
 
+    function testTokenURINonExistent() public {
+        vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+        nft.tokenURI(20);
+    }
+
+    function testRenderSvg() public {
+        nft.mintTo{value: 0.001 ether}(address(1));
+        string memory svg = nft.renderSvg(1);
+        // assertEq(svg, "<svg>...</svg>");
+        // console.log(svg);
+    }
+
+    function testRenderSvgNonExistent() public {
+        vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+        nft.renderSvg(1);
+    }
+
     function testGenerateSvgJson() public {
         nft.mintTo{value: 0.001 ether}(address(1));
         string memory uri = nft.generateSvgJson(1);
