@@ -78,24 +78,59 @@ contract FourbyNFT is ERC721, Ownable {
         );
     }
 
+    function _generateSvgRect(uint256 x, uint256 y, uint256 r, string memory color)
+        internal
+        pure
+        returns (string memory)
+    {
+        return string.concat(
+            '<rect x="',
+            LibString.toString(x),
+            '" y="',
+            LibString.toString(y),
+            '" width="',
+            LibString.toString(r),
+            '" height="',
+            LibString.toString(r),
+            '" fill="',
+            color,
+            '"/>'
+        );
+    }
+
+    function _generateSvgRing(uint256 r, uint256 size, string memory color) internal pure returns (string memory) {
+        return string.concat(
+            '<circle cx="200" cy="200" r="',
+            LibString.toString(r),
+            '" stroke="',
+            color,
+            '" stroke-width="',
+            LibString.toString(size),
+            '" stroke-opacity="1" fill-opacity="0"/>'
+        );
+    }
+
+    function _generateSvgLabel(uint256 tokenId) internal view returns (string memory) {
+        return string.concat(
+            '<text x="10" y="390" class="text" style="fill:#fff">0',
+            LibString.toString(tokenId + 10000),
+            ".",
+            block.chainid.toString(),
+            ".",
+            block.number.toString(),
+            '</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
+        );
+    }
+
     function _generateSvg(uint256 tokenId) internal view returns (string memory) {
         string[4] memory colors =
             [_svgColor(tokenId, 0), _svgColor(tokenId, 1), _svgColor(tokenId, 2), _svgColor(tokenId, 3)];
         string memory svg = string.concat(
             '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 400 400">',
-            '<rect width="400" height="400" x="0" y="0"/>',
-            '<rect width="200" height="200" x="0" y="0" style="fill:',
-            colors[0],
-            ';"/>',
-            '<rect width="200" height="200" x="200" y="0" style="fill:',
-            colors[1],
-            ';"/>',
-            '<rect width="200" height="200" x="0" y="200" style="fill:',
-            colors[2],
-            ';"/>',
-            '<rect width="200" height="200" x="200" y="200" style="fill:',
-            colors[3],
-            ';"/>'
+            _generateSvgRect(0, 0, 200, colors[0]),
+            _generateSvgRect(200, 0, 200, colors[1]),
+            _generateSvgRect(0, 200, 200, colors[2]),
+            _generateSvgRect(200, 200, 200, colors[3])
         );
         uint256 limit = tokenId > 8 ? 8 : tokenId;
         uint256 sum = 0;
@@ -111,29 +146,10 @@ contract FourbyNFT is ERC721, Ownable {
             if (price > 0) {
                 uint256 rad = (i + 1) * 20;
                 uint256 width = _scaleBetween(price, 1, 20, min, max);
-                svg = string.concat(
-                    svg,
-                    '<circle cx="200" cy="200" r="',
-                    rad.toString(),
-                    '" stroke="',
-                    colors[i % 4],
-                    '" stroke-width="',
-                    width.toString(),
-                    '" stroke-opacity="1" fill-opacity="0"/>'
-                );
+                svg = string.concat(svg, _generateSvgRing(rad, width, colors[i % 4]));
             }
         }
-        return string.concat(
-            svg,
-            '<text x="10" y="390" class="text" style="fill:#fff">0',
-            LibString.toString(tokenId + 10000),
-            ".",
-            block.chainid.toString(),
-            ".",
-            block.number.toString(),
-            '</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>',
-            "</svg>"
-        );
+        return string.concat(svg, _generateSvgLabel(tokenId), "</svg>");
     }
 
     function _svgColor(uint256 tokenId, uint256 index) internal view returns (string memory) {

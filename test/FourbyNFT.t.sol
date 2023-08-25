@@ -131,6 +131,27 @@ contract FourbyTest is Test {
         assertEq(parsed.name, "Fourby #1");
     }
 
+    function testGenerateSvgLabel() public {
+        string memory label = nft.generateSvgLabel(5);
+        assertEq(
+            label,
+            '<text x="10" y="390" class="text" style="fill:#fff">010005.31337.1</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
+        );
+    }
+
+    function testGenerateSvgRect() public {
+        string memory rect = nft.generateSvgRect(100, 0, 50, "red");
+        assertEq(rect, '<rect x="100" y="0" width="50" height="50" fill="red"/>');
+    }
+
+    function testGenerateSvgRing() public {
+        string memory ring = nft.generateSvgRing(100, 10, "red");
+        assertEq(
+            ring,
+            '<circle cx="200" cy="200" r="100" stroke="red" stroke-width="10" stroke-opacity="1" fill-opacity="0"/>'
+        );
+    }
+
     function testGenerateRandom(uint256 tokenId, uint256 index) public {
         vm.warp(1641070800);
         uint256 random = nft.generateRandom(tokenId, index) % 10;
@@ -162,6 +183,22 @@ contract TestTokenReceiver {
 // expose internal functions for testing
 contract TestableFourbyNFT is FourbyNFT {
     constructor(address _owner) FourbyNFT(_owner) {}
+
+    function generateSvgLabel(uint256 tokenId) public view returns (string memory) {
+        return _generateSvgLabel(tokenId);
+    }
+
+    function generateSvgRect(uint256 x, uint256 y, uint256 r, string memory color)
+        public
+        pure
+        returns (string memory)
+    {
+        return _generateSvgRect(x, y, r, color);
+    }
+
+    function generateSvgRing(uint256 r, uint256 size, string memory color) public pure returns (string memory) {
+        return _generateSvgRing(r, size, color);
+    }
 
     function generateSvgJson(uint256 tokenId) public view returns (string memory) {
         return _generateSvgJson(tokenId);
