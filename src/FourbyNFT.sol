@@ -17,8 +17,7 @@ contract FourbyNFT is ERC721, Ownable {
     uint256 public currentTokenId;
     string public baseUri;
 
-    uint256 public constant TOTAL_SUPPLY = 10_000;
-    uint256 public constant MINT_PRICE = 0.001 ether;
+    uint256 public constant TOTAL_SUPPLY = 4_000;
 
     uint256[8] public gasPrices = [0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -37,7 +36,6 @@ contract FourbyNFT is ERC721, Ownable {
     }
 
     function mintTo(address recipient) public payable returns (uint256) {
-        if (msg.value < MINT_PRICE) revert MintPriceNotPaid();
         uint256 newTokenId = ++currentTokenId;
         if (newTokenId > TOTAL_SUPPLY) revert MaxSupply();
 
@@ -69,7 +67,7 @@ contract FourbyNFT is ERC721, Ownable {
                     abi.encodePacked(
                         '{"name": "Fourby #',
                         LibString.toString(tokenId),
-                        '", "description": "Fourby is a collection of 10,000 unique NFTs. Each Fourby is randomly generated and stored on-chain.", "image": "data:image/svg+xml;base64,',
+                        '", "description": "Fourby is a collection of 4,000 unique NFTs. Each Fourby is randomly generated and stored on-chain.", "image": "data:image/svg+xml;base64,',
                         Base64.encode(bytes(_generateSvg(tokenId))),
                         '"}'
                     )
@@ -145,7 +143,7 @@ contract FourbyNFT is ERC721, Ownable {
             uint256 price = gasPrices[i];
             if (price > 0) {
                 uint256 rad = (i + 1) * 20;
-                uint256 width = _scaleBetween(price, 1, 20, min, max);
+                uint256 width = _scaleBetween(price, 2, 20, min, max);
                 svg = string.concat(svg, _generateSvgRing(rad, width, colors[i % 4]));
             }
         }

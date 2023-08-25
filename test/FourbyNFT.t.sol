@@ -18,10 +18,12 @@ contract FourbyTest is Test {
         nft = new TestableFourbyNFT(owner);
     }
 
+    /*
     function testRevertMintWithoutValue() public {
         vm.expectRevert(MintPriceNotPaid.selector);
         nft.mintTo(address(1));
     }
+    */
 
     function testMintPricePaid() public {
         nft.mintTo{value: 0.08 ether}(address(1));
@@ -79,8 +81,8 @@ contract FourbyTest is Test {
         address payable payee = payable(address(0x1337));
         uint256 priorOwnerBalance = payee.balance;
 
-        nft.mintTo{value: nft.MINT_PRICE()}(address(receiver));
-        assertEq(address(nft).balance, nft.MINT_PRICE());
+        nft.mintTo{value: 0.001 ether}(address(receiver));
+        assertEq(address(nft).balance, 0.001 ether);
         uint256 nftBalance = address(nft).balance;
 
         nft.withdrawPayments(payee);
@@ -90,8 +92,8 @@ contract FourbyTest is Test {
     function testWithdrawalFailsAsNotOwner() public {
         TestTokenReceiver receiver = new TestTokenReceiver();
 
-        nft.mintTo{value: nft.MINT_PRICE()}(address(receiver));
-        assertEq(address(nft).balance, nft.MINT_PRICE());
+        nft.mintTo{value: 0.001 ether}(address(receiver));
+        assertEq(address(nft).balance, 0.001 ether);
 
         vm.expectRevert(Ownable.Unauthorized.selector);
         vm.startPrank(address(0x1337));
