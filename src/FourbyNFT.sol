@@ -20,6 +20,8 @@ contract FourbyNFT is ERC721, Ownable {
     uint256 public constant TOTAL_SUPPLY = 10_000;
     uint256 public constant MINT_PRICE = 0.001 ether;
 
+    uint256[8] public gasPrices = [0, 0, 0, 0, 0, 0, 0, 0];
+
     constructor(address _owner) {
         currentTokenId = 0;
         _initializeOwner(_owner);
@@ -40,6 +42,7 @@ contract FourbyNFT is ERC721, Ownable {
         if (newTokenId > TOTAL_SUPPLY) revert MaxSupply();
 
         _safeMint(recipient, newTokenId);
+        _updatePrices(tx.gasprice);
         return newTokenId;
     }
 
@@ -94,16 +97,31 @@ contract FourbyNFT is ERC721, Ownable {
             colors[3],
             ';"/>'
         );
-        for (uint256 i = 0; i < 8; i++) {
-            uint256 val = (i + 1) * 20;
-            svg = string.concat(
-                svg,
-                '<circle cx="200" cy="200" r="',
-                val.toString(),
-                '" stroke="',
-                colors[i % 4],
-                '" stroke-width="10" stroke-opacity="1" fill-opacity="0"/>'
-            );
+        uint256 limit = tokenId > 8 ? 8 : tokenId;
+        uint256 sum = 0;
+        uint256 min = 0;
+        uint256 max = 0;
+        for (uint256 i = 0; i < gasPrices.length; i++) {
+            if (gasPrices[i] < min) min = gasPrices[i];
+            if (gasPrices[i] > max) max = gasPrices[i];
+            sum += gasPrices[i];
+        }
+        for (uint256 i = 0; i < limit; i++) {
+            uint256 price = gasPrices[i];
+            if (price > 0) {
+                uint256 rad = (i + 1) * 20;
+                uint256 width = _scaleBetween(price, 1, 20, min, max);
+                svg = string.concat(
+                    svg,
+                    '<circle cx="200" cy="200" r="',
+                    rad.toString(),
+                    '" stroke="',
+                    colors[i % 4],
+                    '" stroke-width="',
+                    width.toString(),
+                    '" stroke-opacity="1" fill-opacity="0"/>'
+                );
+            }
         }
         return string.concat(
             svg,
@@ -147,5 +165,29 @@ contract FourbyNFT is ERC721, Ownable {
 
     function _generateRandom(uint256 seed1, uint256 seed2) internal view returns (uint256) {
         return uint256(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, seed1, seed2)));
+    }
+
+    function _updatePrices(uint256 newPrice) internal returns (uint256) {
+        for (uint256 i = 0; i < gasPrices.length; i++) {
+            uint256 idx = gasPrices.length - 1 - i;
+            if (idx > 0) {
+                gasPrices[idx] = gasPrices[idx - 1];
+            } else {
+                gasPrices[idx] = newPrice;
+            }
+        }
+        return newPrice;
+    }
+
+    function _scaleBetween(uint256 unscaledNum, uint256 minAllowed, uint256 maxAllowed, uint256 min, uint256 max)
+        internal
+        pure
+        returns (uint256)
+    {
+        if (unscaledNum == 0) {
+            return 0;
+        } else {
+            return (maxAllowed - minAllowed) * (unscaledNum - min) / (max - min) + minAllowed;
+        }
     }
 }

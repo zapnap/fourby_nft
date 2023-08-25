@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 
 import "forge-std/Test.sol";
 import "forge-std/StdJson.sol";
+import "forge-std/console.sol";
 import "../src/FourbyNFT.sol";
 
 contract FourbyTest is Test {
@@ -112,7 +113,7 @@ contract FourbyTest is Test {
 
     function testRenderSvg() public {
         nft.mintTo{value: 0.001 ether}(address(1));
-        string memory svg = nft.renderSvg(1);
+        nft.renderSvg(1);
         // assertEq(svg, "<svg>...</svg>");
         // console.log(svg);
     }
@@ -136,6 +137,20 @@ contract FourbyTest is Test {
         assertLe(random, 10);
         assertGe(random, 0);
     }
+
+    function testUpdatePrices(uint256 newPrice) public {
+        vm.txGasPrice(250000);
+        nft.mintTo{value: 0.001 ether}(address(1));
+        nft.updatePrices(newPrice);
+        assertEq(nft.gasPrices(0), newPrice);
+        assertEq(nft.gasPrices(1), 250000);
+        assertEq(nft.gasPrices(2), 0);
+    }
+
+    function testScaleBetween() public {
+        uint256 scaled = nft.scaleBetween(50, 2, 10, 0, 100);
+        assertEq(scaled, 6);
+    }
 }
 
 contract TestTokenReceiver {
@@ -154,6 +169,18 @@ contract TestableFourbyNFT is FourbyNFT {
 
     function generateRandom(uint256 tokenId, uint256 index) public view returns (uint256) {
         return _generateRandom(tokenId, index);
+    }
+
+    function updatePrices(uint256 gasPrice) public returns (uint256) {
+        return _updatePrices(gasPrice);
+    }
+
+    function scaleBetween(uint256 unscaledNum, uint256 minAllowed, uint256 maxAllowed, uint256 min, uint256 max)
+        public
+        pure
+        returns (uint256)
+    {
+        return _scaleBetween(unscaledNum, minAllowed, maxAllowed, min, max);
     }
 }
 
