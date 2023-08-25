@@ -143,7 +143,7 @@ contract FourbyNFT is ERC721, Ownable {
             uint256 price = gasPrices[i];
             if (price > 0) {
                 uint256 rad = (i + 1) * 20;
-                uint256 width = _scaleBetween(price, 2, 20, min, max);
+                uint256 width = _scaleBetween(price, 1, 5, min, max) * 4;
                 svg = string.concat(svg, _generateSvgRing(rad, width, colors[i % 4]));
             }
         }
