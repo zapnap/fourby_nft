@@ -5,13 +5,18 @@ import {Script, console2} from "forge-std/Script.sol";
 import "../src/FourbyNFT.sol";
 
 contract FourbyScript is Script {
-    function setUp() public {}
+    address ownerAddress;
+    uint256 deployerPrivateKey;
+
+    function setUp() public {
+        string memory deployChain = vm.envString("DEPLOY_CHAIN");
+        deployerPrivateKey = vm.envUint(string.concat(deployChain, "_PRIVATE_KEY"));
+        ownerAddress = vm.envAddress(string.concat(deployChain, "_OWNER_ADDRESS"));
+    }
 
     function run() public {
-      uint256 deployerPrivateKey = vm.envUint("FORGE_PRIVATE_KEY");
-      address ownerAddress = vm.envAddress("FORGE_OWNER_ADDRESS");
-      vm.startBroadcast(deployerPrivateKey);
-      FourbyNFT nft = new FourbyNFT(ownerAddress);
-      vm.stopBroadcast();
+        vm.startBroadcast(deployerPrivateKey);
+        FourbyNFT nft = new FourbyNFT(ownerAddress);
+        vm.stopBroadcast();
     }
 }
