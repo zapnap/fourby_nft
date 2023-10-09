@@ -15,7 +15,6 @@ contract FourbyNFT is ERC721, Ownable {
     using LibString for uint256;
 
     uint256 public currentTokenId;
-    string public baseUri;
 
     uint256 public constant TOTAL_SUPPLY = 4_000;
 
@@ -24,7 +23,6 @@ contract FourbyNFT is ERC721, Ownable {
     constructor(address _owner) {
         currentTokenId = 0;
         _initializeOwner(_owner);
-        baseUri = "ipfs://baseUri/";
     }
 
     function name() public view virtual override returns (string memory) {
