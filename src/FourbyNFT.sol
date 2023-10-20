@@ -16,12 +16,13 @@ contract FourbyNFT is ERC721, Ownable {
 
     uint256 public currentTokenId;
 
-    uint256 public constant TOTAL_SUPPLY = 4_000;
+    uint256 public editionSize;
 
     uint256[8] public gasPrices = [0, 0, 0, 0, 0, 0, 0, 0];
 
-    constructor(address _owner) {
+    constructor(address _owner, uint256 _editionSize) {
         currentTokenId = 0;
+        editionSize = _editionSize;
         _initializeOwner(_owner);
     }
 
@@ -34,12 +35,18 @@ contract FourbyNFT is ERC721, Ownable {
     }
 
     function mintTo(address recipient) public payable returns (uint256) {
+        if (numberMintable() < 1) revert MaxSupply();
         uint256 newTokenId = ++currentTokenId;
-        if (newTokenId > TOTAL_SUPPLY) revert MaxSupply();
-
         _safeMint(recipient, newTokenId);
         _updatePrices(tx.gasprice);
         return newTokenId;
+    }
+
+    function numberMintable() public view returns (uint256) {
+        if (editionSize == 0) {
+            return type(uint256).max;
+        }
+        return editionSize - currentTokenId;
     }
 
     function withdrawPayments(address payable payee) external onlyOwner {

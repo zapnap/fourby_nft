@@ -10,70 +10,86 @@ contract FourbyTest is Test {
     using stdStorage for StdStorage;
     using stdJson for string;
 
-    TestableFourbyNFT public nft;
+    TestableFourbyNFT public nftOpenEd;
+    TestableFourbyNFT public nftLimitedEd;
     address public owner;
 
     function setUp() public {
         owner = address(this);
-        nft = new TestableFourbyNFT(owner);
+        nftOpenEd = new TestableFourbyNFT(owner, 0); // open edition
+        nftLimitedEd = new TestableFourbyNFT(owner, 10); // limited edition
     }
 
     /*
     function testRevertMintWithoutValue() public {
         vm.expectRevert(MintPriceNotPaid.selector);
-        nft.mintTo(address(1));
+        nftOpenEd.mintTo(address(1));
     }
     */
 
     function testMintPricePaid() public {
-        nft.mintTo{value: 0.08 ether}(address(1));
+        nftOpenEd.mintTo{value: 0.08 ether}(address(1));
     }
 
     function testRevertMintMaxSupplyReached() public {
-        uint256 slot = stdstore.target(address(nft)).sig("currentTokenId()").find();
+        uint256 slot = stdstore.target(address(nftLimitedEd)).sig("currentTokenId()").find();
         bytes32 loc = bytes32(slot);
-        bytes32 mockedCurrentTokenId = bytes32(abi.encode(10000));
-        vm.store(address(nft), loc, mockedCurrentTokenId);
+        bytes32 mockedCurrentTokenId = bytes32(abi.encode(10));
+        vm.store(address(nftLimitedEd), loc, mockedCurrentTokenId);
         vm.expectRevert(MaxSupply.selector);
-        nft.mintTo{value: 0.08 ether}(address(1));
+        nftLimitedEd.mintTo{value: 0.08 ether}(address(1));
     }
 
     function testRevertMintToZeroAddress() public {
         vm.expectRevert(ERC721.TransferToZeroAddress.selector);
-        nft.mintTo{value: 0.08 ether}(address(0));
+        nftOpenEd.mintTo{value: 0.08 ether}(address(0));
     }
 
     function testNewMintOwnerRegistered() public {
-        nft.mintTo{value: 0.08 ether}(address(1));
-        uint256 slotOfNewOwner = stdstore.target(address(nft)).sig(nft.ownerOf.selector).with_key(1).find();
-        uint160 ownerOfTokenIdOne = uint160(uint256(vm.load(address(nft), bytes32(abi.encode(slotOfNewOwner)))));
+        nftOpenEd.mintTo{value: 0.08 ether}(address(1));
+        uint256 slotOfNewOwner = stdstore.target(address(nftOpenEd)).sig(nftOpenEd.ownerOf.selector).with_key(1).find();
+        uint160 ownerOfTokenIdOne = uint160(uint256(vm.load(address(nftOpenEd), bytes32(abi.encode(slotOfNewOwner)))));
         assertEq(address(ownerOfTokenIdOne), address(1));
     }
 
     function testBalanceIncremented() public {
-        nft.mintTo{value: 0.08 ether}(address(1));
-        uint256 slotBalance = stdstore.target(address(nft)).sig(nft.balanceOf.selector).with_key(address(1)).find();
-        uint256 balanceFirstMint = uint256(vm.load(address(nft), bytes32(slotBalance)));
+        nftOpenEd.mintTo{value: 0.08 ether}(address(1));
+        uint256 slotBalance =
+            stdstore.target(address(nftOpenEd)).sig(nftOpenEd.balanceOf.selector).with_key(address(1)).find();
+        uint256 balanceFirstMint = uint256(vm.load(address(nftOpenEd), bytes32(slotBalance)));
         assertEq(balanceFirstMint, 1);
 
-        nft.mintTo{value: 0.08 ether}(address(1));
-        uint256 balanceSecondMint = uint256(vm.load(address(nft), bytes32(slotBalance)));
+        nftOpenEd.mintTo{value: 0.08 ether}(address(1));
+        uint256 balanceSecondMint = uint256(vm.load(address(nftOpenEd), bytes32(slotBalance)));
         assertEq(balanceSecondMint, 2);
     }
 
     function testSafeContractReceiver() public {
         TestTokenReceiver receiver = new TestTokenReceiver();
-        nft.mintTo{value: 0.08 ether}(address(receiver));
+        nftOpenEd.mintTo{value: 0.08 ether}(address(receiver));
         uint256 slotBalance =
-            stdstore.target(address(nft)).sig(nft.balanceOf.selector).with_key(address(receiver)).find();
-        uint256 balance = uint256(vm.load(address(nft), bytes32(slotBalance)));
+            stdstore.target(address(nftOpenEd)).sig(nftOpenEd.balanceOf.selector).with_key(address(receiver)).find();
+        uint256 balance = uint256(vm.load(address(nftOpenEd), bytes32(slotBalance)));
         assertEq(balance, 1);
     }
 
     function testRevertUnSafeContractReceiver() public {
         vm.etch(address(1234), bytes("mock code"));
         vm.expectRevert(ERC721.TransferToNonERC721ReceiverImplementer.selector);
-        nft.mintTo{value: 1.0 ether}(address(1234));
+        nftOpenEd.mintTo{value: 1.0 ether}(address(1234));
+    }
+
+    function testNumberMintableOpenEdition() public {
+        uint256 number = nftOpenEd.numberMintable();
+        assertEq(number, type(uint256).max);
+    }
+
+    function testNumberMintableLimitedEdition() public {
+        uint256 number = nftLimitedEd.numberMintable();
+        assertEq(number, 10);
+        nftLimitedEd.mintTo{value: 0.001 ether}(address(1));
+        number = nftLimitedEd.numberMintable();
+        assertEq(number, 9);
     }
 
     function testWithdrawalWorksAsOwner() public {
@@ -81,60 +97,60 @@ contract FourbyTest is Test {
         address payable payee = payable(address(0x1337));
         uint256 priorOwnerBalance = payee.balance;
 
-        nft.mintTo{value: 0.001 ether}(address(receiver));
-        assertEq(address(nft).balance, 0.001 ether);
-        uint256 nftBalance = address(nft).balance;
+        nftOpenEd.mintTo{value: 0.001 ether}(address(receiver));
+        assertEq(address(nftOpenEd).balance, 0.001 ether);
+        uint256 nftOpenEdBalance = address(nftOpenEd).balance;
 
-        nft.withdrawPayments(payee);
-        assertEq(payee.balance, priorOwnerBalance + nftBalance);
+        nftOpenEd.withdrawPayments(payee);
+        assertEq(payee.balance, priorOwnerBalance + nftOpenEdBalance);
     }
 
     function testWithdrawalFailsAsNotOwner() public {
         TestTokenReceiver receiver = new TestTokenReceiver();
 
-        nft.mintTo{value: 0.001 ether}(address(receiver));
-        assertEq(address(nft).balance, 0.001 ether);
+        nftOpenEd.mintTo{value: 0.001 ether}(address(receiver));
+        assertEq(address(nftOpenEd).balance, 0.001 ether);
 
         vm.expectRevert(Ownable.Unauthorized.selector);
         vm.startPrank(address(0x1337));
-        nft.withdrawPayments(payable(address(0x1337)));
+        nftOpenEd.withdrawPayments(payable(address(0x1337)));
         vm.stopPrank();
     }
 
     function testTokenURI() public {
-        nft.mintTo{value: 0.001 ether}(address(1));
-        nft.tokenURI(1);
+        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
+        nftOpenEd.tokenURI(1);
         // assertEq(uri, "ipfs://baseUri/1");
         // console.log(uri);
     }
 
     function testTokenURINonExistent() public {
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-        nft.tokenURI(20);
+        nftOpenEd.tokenURI(20);
     }
 
     function testRenderSvg() public {
-        nft.mintTo{value: 0.001 ether}(address(1));
-        nft.renderSvg(1);
+        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
+        nftOpenEd.renderSvg(1);
         // assertEq(svg, "<svg>...</svg>");
         // console.log(svg);
     }
 
     function testRenderSvgNonExistent() public {
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-        nft.renderSvg(1);
+        nftOpenEd.renderSvg(1);
     }
 
     function testGenerateSvgJson() public {
-        nft.mintTo{value: 0.001 ether}(address(1));
-        string memory uri = nft.generateSvgJson(1);
+        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
+        string memory uri = nftOpenEd.generateSvgJson(1);
         string memory decoded = string(Base64.decode(uri));
         FourbyMetadata memory parsed = abi.decode(vm.parseJson(decoded), (FourbyMetadata));
         assertEq(parsed.name, "Fourby #1");
     }
 
     function testGenerateSvgLabel() public {
-        string memory label = nft.generateSvgLabel(5);
+        string memory label = nftOpenEd.generateSvgLabel(5);
         assertEq(
             label,
             '<text x="10" y="390" class="text" style="fill:#fff">010005.31337.1</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
@@ -142,12 +158,12 @@ contract FourbyTest is Test {
     }
 
     function testGenerateSvgRect() public {
-        string memory rect = nft.generateSvgRect(100, 0, 50, "red");
+        string memory rect = nftOpenEd.generateSvgRect(100, 0, 50, "red");
         assertEq(rect, '<rect x="100" y="0" width="50" height="50" fill="red"/>');
     }
 
     function testGenerateSvgRing() public {
-        string memory ring = nft.generateSvgRing(100, 10, "red");
+        string memory ring = nftOpenEd.generateSvgRing(100, 10, "red");
         assertEq(
             ring,
             '<circle cx="200" cy="200" r="100" stroke="red" stroke-width="10" stroke-opacity="1" fill-opacity="0"/>'
@@ -156,22 +172,22 @@ contract FourbyTest is Test {
 
     function testGenerateRandom(uint256 tokenId, uint256 index) public {
         vm.warp(1641070800);
-        uint256 random = nft.generateRandom(tokenId, index) % 10;
+        uint256 random = nftOpenEd.generateRandom(tokenId, index) % 10;
         assertLe(random, 10);
         assertGe(random, 0);
     }
 
     function testUpdatePrices(uint256 newPrice) public {
         vm.txGasPrice(250000);
-        nft.mintTo{value: 0.001 ether}(address(1));
-        nft.updatePrices(newPrice);
-        assertEq(nft.gasPrices(0), newPrice);
-        assertEq(nft.gasPrices(1), 250000);
-        assertEq(nft.gasPrices(2), 0);
+        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
+        nftOpenEd.updatePrices(newPrice);
+        assertEq(nftOpenEd.gasPrices(0), newPrice);
+        assertEq(nftOpenEd.gasPrices(1), 250000);
+        assertEq(nftOpenEd.gasPrices(2), 0);
     }
 
     function testScaleBetween() public {
-        uint256 scaled = nft.scaleBetween(50, 2, 10, 0, 100);
+        uint256 scaled = nftOpenEd.scaleBetween(50, 2, 10, 0, 100);
         assertEq(scaled, 6);
     }
 }
@@ -184,7 +200,7 @@ contract TestTokenReceiver {
 
 // expose internal functions for testing
 contract TestableFourbyNFT is FourbyNFT {
-    constructor(address _owner) FourbyNFT(_owner) {}
+    constructor(address _owner, uint256 _editionSize) FourbyNFT(_owner, _editionSize) {}
 
     function generateSvgLabel(uint256 tokenId) public view returns (string memory) {
         return _generateSvgLabel(tokenId);
