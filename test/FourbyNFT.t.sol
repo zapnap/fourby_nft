@@ -16,8 +16,8 @@ contract FourbyTest is Test {
 
     function setUp() public {
         owner = address(this);
-        nftOpenEd = new TestableFourbyNFT(owner, 0); // open edition
-        nftLimitedEd = new TestableFourbyNFT(owner, 10); // limited edition
+        nftOpenEd = new TestableFourbyNFT(owner, 0, 7200); // open edition with 1 day of mint time
+        nftLimitedEd = new TestableFourbyNFT(owner, 10, 0); // limited edition with no date cutoff
     }
 
     /*
@@ -38,6 +38,12 @@ contract FourbyTest is Test {
         vm.store(address(nftLimitedEd), loc, mockedCurrentTokenId);
         vm.expectRevert(MaxSupply.selector);
         nftLimitedEd.mintTo{value: 0.08 ether}(address(1));
+    }
+
+    function testRevertMintIsEnded() public {
+        vm.roll(block.number + 7201);
+        vm.expectRevert(MintEnded.selector);
+        nftOpenEd.mintTo{value: 0.08 ether}(address(1));
     }
 
     function testRevertMintToZeroAddress() public {
@@ -90,6 +96,16 @@ contract FourbyTest is Test {
         nftLimitedEd.mintTo{value: 0.001 ether}(address(1));
         number = nftLimitedEd.numberMintable();
         assertEq(number, 9);
+    }
+
+    function testMintEnded() public {
+        assertEq(nftOpenEd.mintEnded(), false);
+        vm.roll(block.number + 7201);
+        assertEq(nftOpenEd.mintEnded(), true);
+    }
+
+    function testMintEndedZero() public {
+        assertEq(nftLimitedEd.mintEnded(), false);
     }
 
     function testWithdrawalWorksAsOwner() public {
@@ -200,7 +216,9 @@ contract TestTokenReceiver {
 
 // expose internal functions for testing
 contract TestableFourbyNFT is FourbyNFT {
-    constructor(address _owner, uint256 _editionSize) FourbyNFT(_owner, _editionSize) {}
+    constructor(address _owner, uint256 _editionSize, uint256 _blocksToMint)
+        FourbyNFT(_owner, _editionSize, _blocksToMint)
+    {}
 
     function generateSvgLabel(uint256 tokenId) public view returns (string memory) {
         return _generateSvgLabel(tokenId);

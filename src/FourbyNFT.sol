@@ -9,6 +9,7 @@ import "solady/utils/LibString.sol";
 
 error MintPriceNotPaid();
 error MaxSupply();
+error MintEnded();
 error WithdrawTransfer();
 
 contract FourbyNFT is ERC721, Ownable {
@@ -18,11 +19,18 @@ contract FourbyNFT is ERC721, Ownable {
 
     uint256 public editionSize;
 
+    uint256 public mintFirstBlock;
+
+    uint256 public mintLastBlock;
+
     uint256[8] public gasPrices = [0, 0, 0, 0, 0, 0, 0, 0];
 
-    constructor(address _owner, uint256 _editionSize) {
+    constructor(address _owner, uint256 _editionSize, uint256 _blocksToMint) {
         currentTokenId = 0;
         editionSize = _editionSize;
+        mintFirstBlock = block.number;
+        // currently 12s block time == 7200 blocks per day
+        mintLastBlock = _blocksToMint == 0 ? 0 : mintFirstBlock + _blocksToMint;
         _initializeOwner(_owner);
     }
 
@@ -35,6 +43,7 @@ contract FourbyNFT is ERC721, Ownable {
     }
 
     function mintTo(address recipient) public payable returns (uint256) {
+        if (mintEnded()) revert MintEnded();
         if (numberMintable() < 1) revert MaxSupply();
         uint256 newTokenId = ++currentTokenId;
         _safeMint(recipient, newTokenId);
@@ -43,10 +52,16 @@ contract FourbyNFT is ERC721, Ownable {
     }
 
     function numberMintable() public view returns (uint256) {
-        if (editionSize == 0) {
+        if (mintEnded()) {
+            return 0;
+        } else if (editionSize == 0) {
             return type(uint256).max;
         }
         return editionSize - currentTokenId;
+    }
+
+    function mintEnded() public view returns (bool) {
+        return mintLastBlock > 0 && block.number > mintLastBlock;
     }
 
     function withdrawPayments(address payable payee) external onlyOwner {
