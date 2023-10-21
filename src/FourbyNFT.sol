@@ -15,6 +15,8 @@ error WithdrawTransfer();
 contract FourbyNFT is ERC721, Ownable {
     using LibString for uint256;
 
+    string public constant VERSION = "010";
+
     uint256 public currentTokenId;
 
     uint256 public editionSize;
@@ -130,12 +132,14 @@ contract FourbyNFT is ERC721, Ownable {
 
     function _generateSvgLabel(uint256 tokenId) internal view returns (string memory) {
         return string.concat(
-            '<text x="10" y="390" class="text" style="fill:#fff">0',
-            LibString.toString(tokenId + 10000),
+            '<text x="10" y="390" class="text" style="fill:#fff">',
+            VERSION,
             ".",
             block.chainid.toString(),
             ".",
             block.number.toString(),
+            ".",
+            LibString.toHexStringNoPrefix(tokenId, 2),
             '</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
         );
     }

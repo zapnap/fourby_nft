@@ -169,7 +169,7 @@ contract FourbyTest is Test {
         string memory label = nftOpenEd.generateSvgLabel(5);
         assertEq(
             label,
-            '<text x="10" y="390" class="text" style="fill:#fff">010005.31337.1</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
+            '<text x="10" y="390" class="text" style="fill:#fff">010.31337.1.0005</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
         );
     }
 
