@@ -19,6 +19,8 @@ contract FourbyNFT is ERC721, Ownable {
 
     uint256 public currentTokenId;
 
+    uint256 public mintPrice;
+
     uint256 public editionSize;
 
     uint256 public mintFirstBlock;
@@ -27,8 +29,9 @@ contract FourbyNFT is ERC721, Ownable {
 
     uint256[8] public gasPrices = [0, 0, 0, 0, 0, 0, 0, 0];
 
-    constructor(address _owner, uint256 _editionSize, uint256 _blocksToMint) {
+    constructor(address _owner, uint256 _mintPrice, uint256 _editionSize, uint256 _blocksToMint) {
         currentTokenId = 0;
+        mintPrice = _mintPrice; // wei
         editionSize = _editionSize;
         mintFirstBlock = block.number;
         // currently 12s block time == 7200 blocks per day
@@ -45,6 +48,7 @@ contract FourbyNFT is ERC721, Ownable {
     }
 
     function mintTo(address recipient) public payable returns (uint256) {
+        if (mintPrice > 0 && msg.value < mintPrice) revert MintPriceNotPaid();
         if (mintEnded()) revert MintEnded();
         if (numberMintable() < 1) revert MaxSupply();
         uint256 newTokenId = ++currentTokenId;

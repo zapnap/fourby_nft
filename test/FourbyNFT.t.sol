@@ -16,19 +16,28 @@ contract FourbyTest is Test {
 
     function setUp() public {
         owner = address(this);
-        nftOpenEd = new TestableFourbyNFT(owner, 0, 7200); // open edition with 1 day of mint time
-        nftLimitedEd = new TestableFourbyNFT(owner, 10, 0); // limited edition with no date cutoff
+        nftOpenEd = new TestableFourbyNFT(owner, 0, 0, 7200); // open edition with 1 day of mint time
+        nftLimitedEd = new TestableFourbyNFT(owner, 80000000000000000, 10, 0); // limited edition with no date cutoff
     }
 
-    /*
     function testRevertMintWithoutValue() public {
         vm.expectRevert(MintPriceNotPaid.selector);
-        nftOpenEd.mintTo(address(1));
+        nftLimitedEd.mintTo(address(1));
     }
-    */
+
+    function testRevertMintValueInsufficient() public {
+        vm.expectRevert(MintPriceNotPaid.selector);
+        nftLimitedEd.mintTo{value: 0.07 ether}(address(1));
+    }
+
+    function testMintPriceFreeMint() public {
+        nftOpenEd.mintTo(address(1));
+        assertEq(address(nftOpenEd).balance, 0);
+    }
 
     function testMintPricePaid() public {
-        nftOpenEd.mintTo{value: 0.08 ether}(address(1));
+        nftLimitedEd.mintTo{value: 0.08 ether}(address(1));
+        assertEq(address(nftLimitedEd).balance, 0.08 ether);
     }
 
     function testRevertMintMaxSupplyReached() public {
@@ -93,7 +102,7 @@ contract FourbyTest is Test {
     function testNumberMintableLimitedEdition() public {
         uint256 number = nftLimitedEd.numberMintable();
         assertEq(number, 10);
-        nftLimitedEd.mintTo{value: 0.001 ether}(address(1));
+        nftLimitedEd.mintTo{value: 0.08 ether}(address(1));
         number = nftLimitedEd.numberMintable();
         assertEq(number, 9);
     }
@@ -216,8 +225,8 @@ contract TestTokenReceiver {
 
 // expose internal functions for testing
 contract TestableFourbyNFT is FourbyNFT {
-    constructor(address _owner, uint256 _editionSize, uint256 _blocksToMint)
-        FourbyNFT(_owner, _editionSize, _blocksToMint)
+    constructor(address _owner, uint256 _mintPrice, uint256 _editionSize, uint256 _blocksToMint)
+        FourbyNFT(_owner, _mintPrice, _editionSize, _blocksToMint)
     {}
 
     function generateSvgLabel(uint256 tokenId) public view returns (string memory) {
