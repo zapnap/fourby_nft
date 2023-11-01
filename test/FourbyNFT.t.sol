@@ -16,6 +16,7 @@ contract FourbyTest is Test {
 
     function setUp() public {
         owner = address(this);
+        vm.roll(42);
         nftOpenEd = new TestableFourbyNFT(owner, 0, 0, 7200); // open edition with 1 day of mint time
         nftLimitedEd = new TestableFourbyNFT(owner, 80000000000000000, 10, 0); // limited edition with no date cutoff
     }
@@ -38,6 +39,15 @@ contract FourbyTest is Test {
     function testMintPricePaid() public {
         nftLimitedEd.mintTo{value: 0.08 ether}(address(1));
         assertEq(address(nftLimitedEd).balance, 0.08 ether);
+    }
+
+    function testMintUpdatesBlockMinted() public {
+        nftLimitedEd.mintTo{value: 0.08 ether}(address(1));
+        assertEq(nftLimitedEd.blockMinted(1), 42);
+        vm.roll(43);
+        nftLimitedEd.mintTo{value: 0.08 ether}(address(1));
+        assertEq(nftLimitedEd.blockMinted(1), 42);
+        assertEq(nftLimitedEd.blockMinted(2), 43);
     }
 
     function testRevertMintMaxSupplyReached() public {
@@ -175,31 +185,27 @@ contract FourbyTest is Test {
     }
 
     function testGenerateSvgLabel() public {
-        string memory label = nftOpenEd.generateSvgLabel(5);
+        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
+        string memory label = nftOpenEd.generateSvgLabel(1);
         assertEq(
             label,
-            '<text x="10" y="390" class="text" style="fill:#fff">010.31337.1.0005</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
+            '<text x="10" y="390" class="text" style="fill:#fff">010.31337.42.0001</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
         );
     }
 
     function testGenerateSvgRect() public {
+        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
         string memory rect = nftOpenEd.generateSvgRect(100, 0, 50, "red");
         assertEq(rect, '<rect x="100" y="0" width="50" height="50" fill="red"/>');
     }
 
     function testGenerateSvgRing() public {
+        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
         string memory ring = nftOpenEd.generateSvgRing(100, 10, "red");
         assertEq(
             ring,
             '<circle cx="200" cy="200" r="100" stroke="red" stroke-width="10" stroke-opacity="1" fill-opacity="0"/>'
         );
-    }
-
-    function testGenerateRandom(uint256 tokenId, uint256 index) public {
-        vm.warp(1641070800);
-        uint256 random = nftOpenEd.generateRandom(tokenId, index) % 10;
-        assertLe(random, 10);
-        assertGe(random, 0);
     }
 
     function testUpdatePrices(uint256 newPrice) public {
@@ -247,10 +253,6 @@ contract TestableFourbyNFT is FourbyNFT {
 
     function generateSvgJson(uint256 tokenId) public view returns (string memory) {
         return _generateSvgJson(tokenId);
-    }
-
-    function generateRandom(uint256 tokenId, uint256 index) public view returns (uint256) {
-        return _generateRandom(tokenId, index);
     }
 
     function updatePrices(uint256 gasPrice) public returns (uint256) {

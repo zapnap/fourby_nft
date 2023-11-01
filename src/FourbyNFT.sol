@@ -27,6 +27,8 @@ contract FourbyNFT is ERC721, Ownable {
 
     uint256 public mintLastBlock;
 
+    mapping(uint256 => uint256) public blockMinted;
+
     uint256[8] public gasPrices = [0, 0, 0, 0, 0, 0, 0, 0];
 
     constructor(address _owner, uint256 _mintPrice, uint256 _editionSize, uint256 _blocksToMint) {
@@ -54,6 +56,7 @@ contract FourbyNFT is ERC721, Ownable {
         uint256 newTokenId = ++currentTokenId;
         _safeMint(recipient, newTokenId);
         _updatePrices(tx.gasprice);
+        blockMinted[newTokenId] = block.number;
         return newTokenId;
     }
 
@@ -141,7 +144,7 @@ contract FourbyNFT is ERC721, Ownable {
             ".",
             block.chainid.toString(),
             ".",
-            block.number.toString(),
+            blockMinted[tokenId].toString(),
             ".",
             LibString.toHexStringNoPrefix(tokenId, 2),
             '</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
@@ -178,7 +181,7 @@ contract FourbyNFT is ERC721, Ownable {
         return string.concat(svg, _generateSvgLabel(tokenId), "</svg>");
     }
 
-    function _svgColor(uint256 tokenId, uint256 index) internal view returns (string memory) {
+    function _svgColor(uint256 tokenId, uint256 position) internal view returns (string memory) {
         string[20] memory svgColors = [
             "#B8255F", // berry red
             "#DB4035", // red
@@ -202,11 +205,8 @@ contract FourbyNFT is ERC721, Ownable {
             "#CCAC93" // taupe
         ];
 
-        return svgColors[_generateRandom(tokenId, index) % svgColors.length];
-    }
-
-    function _generateRandom(uint256 seed1, uint256 seed2) internal view returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, seed1, seed2)));
+        uint256 idx = uint256(keccak256(abi.encodePacked(blockMinted[tokenId], position)));
+        return svgColors[idx % svgColors.length];
     }
 
     function _updatePrices(uint256 newPrice) internal returns (uint256) {
