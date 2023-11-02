@@ -16,7 +16,6 @@ contract FourbyTest is Test {
 
     function setUp() public {
         owner = address(this);
-        vm.roll(42);
         nftOpenEd = new TestableFourbyNFT(owner, 0, 0, 7200); // open edition with 1 day of mint time
         nftLimitedEd = new TestableFourbyNFT(owner, 80000000000000000, 10, 0); // limited edition with no date cutoff
     }
@@ -41,13 +40,17 @@ contract FourbyTest is Test {
         assertEq(address(nftLimitedEd).balance, 0.08 ether);
     }
 
-    function testMintUpdatesBlockMinted() public {
-        nftLimitedEd.mintTo{value: 0.08 ether}(address(1));
-        assertEq(nftLimitedEd.blockMinted(1), 42);
-        vm.roll(43);
-        nftLimitedEd.mintTo{value: 0.08 ether}(address(1));
-        assertEq(nftLimitedEd.blockMinted(1), 42);
-        assertEq(nftLimitedEd.blockMinted(2), 43);
+    function testUpdateMintData(uint256 newPrice) public {
+        vm.txGasPrice(250000);
+        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
+        vm.roll(2);
+        vm.txGasPrice(newPrice);
+        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
+        assertEq(nftOpenEd.currentTokenId(), 2);
+        assertEq(nftOpenEd.mintDataBlockNumber(1), 1);
+        assertEq(nftOpenEd.mintDataGasPrice(1), 250000);
+        assertEq(nftOpenEd.mintDataBlockNumber(2), 2);
+        assertEq(nftOpenEd.mintDataGasPrice(2), newPrice);
     }
 
     function testRevertMintMaxSupplyReached() public {
@@ -185,6 +188,7 @@ contract FourbyTest is Test {
     }
 
     function testGenerateSvgLabel() public {
+        vm.roll(42);
         nftOpenEd.mintTo{value: 0.001 ether}(address(1));
         string memory label = nftOpenEd.generateSvgLabel(1);
         assertEq(
@@ -206,15 +210,6 @@ contract FourbyTest is Test {
             ring,
             '<circle cx="200" cy="200" r="100" stroke="red" stroke-width="10" stroke-opacity="1" fill-opacity="0"/>'
         );
-    }
-
-    function testUpdatePrices(uint256 newPrice) public {
-        vm.txGasPrice(250000);
-        nftOpenEd.mintTo{value: 0.001 ether}(address(1));
-        nftOpenEd.updatePrices(newPrice);
-        assertEq(nftOpenEd.gasPrices(0), newPrice);
-        assertEq(nftOpenEd.gasPrices(1), 250000);
-        assertEq(nftOpenEd.gasPrices(2), 0);
     }
 
     function testScaleBetween() public {
@@ -255,16 +250,22 @@ contract TestableFourbyNFT is FourbyNFT {
         return _generateSvgJson(tokenId);
     }
 
-    function updatePrices(uint256 gasPrice) public returns (uint256) {
-        return _updatePrices(gasPrice);
-    }
-
     function scaleBetween(uint256 unscaledNum, uint256 minAllowed, uint256 maxAllowed, uint256 min, uint256 max)
         public
         pure
         returns (uint256)
     {
         return _scaleBetween(unscaledNum, minAllowed, maxAllowed, min, max);
+    }
+
+    function mintDataBlockNumber(uint256 tokenId) public view returns (uint256) {
+        (uint256 blockNumber,) = _mintData(tokenId);
+        return blockNumber;
+    }
+
+    function mintDataGasPrice(uint256 tokenId) public view returns (uint256) {
+        (, uint256 gasPrice) = _mintData(tokenId);
+        return gasPrice;
     }
 }
 

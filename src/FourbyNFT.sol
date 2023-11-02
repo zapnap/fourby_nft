@@ -15,6 +15,12 @@ error WithdrawTransfer();
 contract FourbyNFT is ERC721, Ownable {
     using LibString for uint256;
 
+    struct MintData {
+        uint256 blockNumber;
+        // uint256 blockDifficulty;
+        uint256 gasPrice;
+    }
+
     string public constant VERSION = "010";
 
     uint256 public currentTokenId;
@@ -27,9 +33,7 @@ contract FourbyNFT is ERC721, Ownable {
 
     uint256 public mintLastBlock;
 
-    mapping(uint256 => uint256) public blockMinted;
-
-    uint256[8] public gasPrices = [0, 0, 0, 0, 0, 0, 0, 0];
+    mapping(uint256 => MintData) public mintData;
 
     constructor(address _owner, uint256 _mintPrice, uint256 _editionSize, uint256 _blocksToMint) {
         currentTokenId = 0;
@@ -55,8 +59,11 @@ contract FourbyNFT is ERC721, Ownable {
         if (numberMintable() < 1) revert MaxSupply();
         uint256 newTokenId = ++currentTokenId;
         _safeMint(recipient, newTokenId);
-        _updatePrices(tx.gasprice);
-        blockMinted[newTokenId] = block.number;
+        mintData[newTokenId] = MintData({
+            blockNumber: block.number,
+            // blockDifficulty: block.difficulty,
+            gasPrice: tx.gasprice
+        });
         return newTokenId;
     }
 
@@ -144,7 +151,7 @@ contract FourbyNFT is ERC721, Ownable {
             ".",
             block.chainid.toString(),
             ".",
-            blockMinted[tokenId].toString(),
+            mintData[tokenId].blockNumber.toString(),
             ".",
             LibString.toHexStringNoPrefix(tokenId, 2),
             '</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
@@ -161,17 +168,18 @@ contract FourbyNFT is ERC721, Ownable {
             _generateSvgRect(0, 200, 200, colors[2]),
             _generateSvgRect(200, 200, 200, colors[3])
         );
-        uint256 limit = tokenId > 8 ? 8 : tokenId;
+        uint256 limit = tokenId <= 8 ? 0 : tokenId - 8;
         uint256 sum = 0;
         uint256 min = 0;
         uint256 max = 0;
-        for (uint256 i = 0; i < gasPrices.length; i++) {
-            if (gasPrices[i] < min) min = gasPrices[i];
-            if (gasPrices[i] > max) max = gasPrices[i];
-            sum += gasPrices[i];
+        for (uint256 i = tokenId; i > limit; i--) {
+            uint256 price = mintData[i].gasPrice;
+            if (price < min) min = price;
+            if (price > max) max = price;
+            sum += price;
         }
-        for (uint256 i = 0; i < limit; i++) {
-            uint256 price = gasPrices[i];
+        for (uint256 i = tokenId; i > limit; i--) {
+            uint256 price = mintData[i].gasPrice;
             if (price > 0) {
                 uint256 rad = (i + 1) * 20;
                 uint256 width = _scaleBetween(price, 1, 5, min, max) * 4;
@@ -205,20 +213,8 @@ contract FourbyNFT is ERC721, Ownable {
             "#CCAC93" // taupe
         ];
 
-        uint256 idx = uint256(keccak256(abi.encodePacked(blockMinted[tokenId], position)));
+        uint256 idx = uint256(keccak256(abi.encodePacked(mintData[tokenId].blockNumber, position)));
         return svgColors[idx % svgColors.length];
-    }
-
-    function _updatePrices(uint256 newPrice) internal returns (uint256) {
-        for (uint256 i = 0; i < gasPrices.length; i++) {
-            uint256 idx = gasPrices.length - 1 - i;
-            if (idx > 0) {
-                gasPrices[idx] = gasPrices[idx - 1];
-            } else {
-                gasPrices[idx] = newPrice;
-            }
-        }
-        return newPrice;
     }
 
     function _scaleBetween(uint256 unscaledNum, uint256 minAllowed, uint256 maxAllowed, uint256 min, uint256 max)
@@ -231,5 +227,10 @@ contract FourbyNFT is ERC721, Ownable {
         } else {
             return (maxAllowed - minAllowed) * (unscaledNum - min) / (max - min) + minAllowed;
         }
+    }
+
+    // wtf
+    function _mintData(uint256 tokenId) internal view returns (uint256, uint256) {
+        return (mintData[tokenId].blockNumber, mintData[tokenId].gasPrice);
     }
 }
