@@ -168,20 +168,20 @@ contract FourbyNFT is ERC721, Ownable {
             _generateSvgRect(0, 200, 200, colors[2]),
             _generateSvgRect(200, 200, 200, colors[3])
         );
-        uint256 limit = tokenId <= 8 ? 0 : tokenId - 8;
         uint256 sum = 0;
         uint256 min = 0;
         uint256 max = 0;
-        for (uint256 i = tokenId; i > limit; i--) {
+        uint256 limit = tokenId >= 8 ? tokenId - 7 : 1; // max 8 rings
+        for (uint256 i = tokenId; i >= limit; i--) {
             uint256 price = mintData[i].gasPrice;
             if (price < min) min = price;
             if (price > max) max = price;
             sum += price;
         }
-        for (uint256 i = tokenId; i > limit; i--) {
+        for (uint256 i = tokenId; i >= limit; i--) {
             uint256 price = mintData[i].gasPrice;
             if (price > 0) {
-                uint256 rad = (i + 1) * 20;
+                uint256 rad = (tokenId - i + 1) * 20;
                 uint256 width = _scaleBetween(price, 1, 5, min, max) * 4;
                 svg = string.concat(svg, _generateSvgRing(rad, width, colors[i % 4]));
             }
