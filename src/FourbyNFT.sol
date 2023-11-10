@@ -229,7 +229,6 @@ contract FourbyNFT is ERC721, Ownable {
         }
     }
 
-    // wtf
     function _mintData(uint256 tokenId) internal view returns (uint256, uint256) {
         return (mintData[tokenId].blockNumber, mintData[tokenId].gasPrice);
     }
