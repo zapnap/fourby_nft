@@ -188,12 +188,17 @@ contract FourbyTest is Test {
     }
 
     function testGenerateSvgLabel() public {
+        string memory version = nftOpenEd.VERSION();
         vm.roll(42);
         nftOpenEd.mintTo{value: 0.001 ether}(address(1));
         string memory label = nftOpenEd.generateSvgLabel(1);
         assertEq(
             label,
-            '<text x="10" y="390" class="text" style="fill:#fff">010.31337.42.0001</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
+            string.concat(
+                '<text x="10" y="390" class="text" style="fill:#fff">',
+                version,
+                '.31337.42.0001</text><style>.text { font-family: "Courier New"; font-weight: bold; }</style>'
+            )
         );
     }
 
