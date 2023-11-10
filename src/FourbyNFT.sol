@@ -21,7 +21,7 @@ contract FourbyNFT is ERC721, Ownable {
         uint256 gasPrice;
     }
 
-    string public constant VERSION = "010";
+    string public constant VERSION = "011";
 
     uint256 public currentTokenId;
 
